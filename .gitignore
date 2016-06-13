@@ -1,0 +1,5 @@
+/.idea
+/vendor
+/ipa-info
+/ipa-tmp
+/composer.lock
