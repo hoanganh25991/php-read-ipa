@@ -27,5 +27,11 @@
     "minimum-stability": "dev",
     "bin": [
         "bin/ipin.py"
-    ]
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/hoanganh25991/php-ipa-apk.git"
+        }
+    ],
 }
