@@ -136,7 +136,7 @@ class IpaParser{
             }
 
             //set default for $iconPath
-            $iconPath = __DIR__ . "app-icon.ico";
+            $iconPath = __DIR__ . "app-icon.png";
             if(!$failedDecode){
                 $iconPath = $this->extractFolder . I . self::APP_ICON;
             }
@@ -154,23 +154,27 @@ class IpaParser{
      * @throws Exception
      */
     private function cmd($cmd, $command, $exceptionType){
-        exec($cmd . " --help", $out, $resultCode);
-        if($resultCode == 1){
-            //$cmd not installed or not added to environment variable
-            $errMsg = sprintf("%s not installed or not added to environment variable", $cmd);
-            throw new Exception($errMsg);
+//        exec($cmd, $out, $resultCode);
+//        if($resultCode == 1){
+//            //$cmd not installed or not added to environment variable
+//            $errMsg = sprintf("%s not installed or not added to environment variable", $cmd);
+//            throw new Exception($errMsg);
+//        }
+//
+//        if($resultCode == 0 || $resultCode == 2){
+//            exec($command, $out, $resultCode);
+//            if($resultCode == 0){
+//                return $out;
+//            }else{
+//                throw new $exceptionType($resultCode);
+//            }
+//        }
+//
+//        throw new Exception(self::UN_HANDLE);
+        exec($command, $out, $resultCode);
+        if($resultCode != 0){
+            throw new Exception($out);
         }
-
-        if($resultCode == 0 || $resultCode == 2){
-            exec($command, $out, $resultCode);
-            if($resultCode == 0){
-                return $out;
-            }else{
-                throw new $exceptionType($resultCode);
-            }
-        }
-
-        throw new Exception(self::UN_HANDLE);
     }
 
     public function getIcon(){
