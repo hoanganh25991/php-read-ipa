@@ -112,11 +112,14 @@ class IpaParser{
             $dir = scandir($this->extractFolder . I . "Payload");
             $appFolder = $dir[2];
             //make sure that $appFolder NOT contain SPACE
-            $oldFolder = $appFolder;
-            $appFolder = $this->removeSpace($oldFolder);
-            $renameCommand = sprintf("mv '%s' %s", $this->extractFolder . I . "Payload" . I . $oldFolder,
-                $this->extractFolder . I . "Payload" . I . $appFolder);
-            $this->cmd(self::MV, $renameCommand, Exception::class);
+            //believe in preg_match
+            if(preg_match('/\s/', $appFolder) === 1){
+                $oldFolder = $appFolder;
+                $appFolder = $this->removeSpace($oldFolder);
+                $renameCommand = sprintf("mv '%s' %s", $this->extractFolder . I . "Payload" . I . $oldFolder,
+                    $this->extractFolder . I . "Payload" . I . $appFolder);
+                $this->cmd(self::MV, $renameCommand, Exception::class);
+            }
 
             $this->moveFiles($this->extractFolder . I . "Payload" . I . $appFolder, self::PLIST);
             $plistPath = $this->extractFolder . I . self::PLIST;
@@ -141,7 +144,7 @@ class IpaParser{
 
             //set default for $iconPath
             if($failedDecode){
-                $copyStatus = copy(__DIR__ . "app-icon.png", $this->extractFolder.I.self::APP_ICON);
+                $copyStatus = copy(__DIR__ . I . "app-icon.png", $this->extractFolder . I . self::APP_ICON);
                 if(!$copyStatus){
                     trigger_error("copy default icon failed", E_USER_WARNING);
                 }
@@ -179,7 +182,8 @@ class IpaParser{
 //        throw new Exception(self::UN_HANDLE);
         exec($command, $out, $resultCode);
         if($resultCode != 0){
-            throw new Exception($out);
+            $msg = sprintf("Error when execute cmd: %s", $command);
+            throw new Exception($msg);
         }
     }
 
@@ -198,12 +202,21 @@ class IpaParser{
         return $info;
     }
 
+    /**
+     * @param $imgPath
+     * @param $imgPattern
+     */
     private function moveFiles($imgPath, $imgPattern){
+        //MOVE FILE EASILY FAILED when something doesn't match it
+        //but it doesn't have HUGE IMPACT on result
+        //bypass exception, just exec
         $mvCommand = sprintf("%s %s %s", self::MV, $imgPath . I . $imgPattern, self::OUTPUT_TEMP);
-        $this->cmd(self::MV, $mvCommand, Exception::class);
+        exec($mvCommand);
+//        $this->cmd(self::MV, $mvCommand, Exception::class);
         //now move *.png back to $this->extractFolder
         $mvCommand = sprintf("%s %s %s", self::MV, self::OUTPUT_TEMP . I . $imgPattern, $this->extractFolder);
-        $this->cmd("mv", $mvCommand, Exception::class);
+        exec($mvCommand);
+//        $this->cmd("mv", $mvCommand, Exception::class);
     }
 
     private function removeSpace($name){
