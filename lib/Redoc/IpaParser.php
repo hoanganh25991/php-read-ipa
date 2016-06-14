@@ -135,10 +135,16 @@ class IpaParser{
                 $failedDecode = !$pngUncrushed->decode($this->extractFolder . I . self::APP_ICON);
             }
 
-            //set default for $iconPath
-            $iconPath = __DIR__ . "app-icon.png";
             if(!$failedDecode){
-                $iconPath = $this->extractFolder . I . self::APP_ICON;
+                trigger_error("decode success", E_USER_NOTICE);
+            }
+
+            //set default for $iconPath
+            if($failedDecode){
+                $copyStatus = copy(__DIR__ . "app-icon.png", $this->extractFolder.I.self::APP_ICON);
+                if(!$copyStatus){
+                    trigger_error("copy default icon failed", E_USER_WARNING);
+                }
             }
         }
         //store plist, icon
