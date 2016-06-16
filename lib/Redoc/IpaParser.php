@@ -9,7 +9,7 @@ require_once(__DIR__ . "/PPngUncrush.php");
 use CFPropertyList\CFPropertyList;
 use Exception;
 
-class IpaParser{
+class IpaParser {
     const UN_HANDLE = "sorry, we still not handle this situation";
     const ZIP = "7z";
     const MV = "mv";
@@ -27,6 +27,9 @@ class IpaParser{
     const DATE = "date";
     const ICON_PATH = "iconPath";
 
+    const APP_NAME = "appName";
+    const BUNDLE_INDENTIFIER = "bundleIndentifier";
+
 
     private $ipaFilePath;
     private $outputDir;
@@ -38,9 +41,9 @@ class IpaParser{
     private $extractFolder;
     private $parsed;
 
-    public function __construct($ipaFilePath, $outputDir = "", $options = array()){
+    public function __construct($ipaFilePath, $outputDir = "", $options = []) {
         //check ipa file exist
-        if(!file_exists($ipaFilePath)){
+        if (!file_exists($ipaFilePath)) {
             $errMsg = sprintf("ipa file not exist\nfile path: %s", $ipaFilePath);
             throw new Exception(nl2br($errMsg));
         }
@@ -48,11 +51,11 @@ class IpaParser{
 
         //check output is directory
         $this->outputDir = self::OUTPUT_DIR;
-        if(!empty($outputDir)){
+        if (!empty($outputDir)) {
             $this->outputDir = $this->removeSpace($outputDir);
         }
 
-        if(!is_dir($this->outputDir) && !file_exists($this->outputDir)){
+        if (!is_dir($this->outputDir) && !file_exists($this->outputDir)) {
             mkdir($this->outputDir, 777, true);
         }
 
@@ -68,24 +71,24 @@ class IpaParser{
     }
 
 
-    private function parse(){
+    private function parse() {
         $this->checkParse();
 
         $iconPath = $this->extractFolder . I . self::APP_ICON;
 
         $plistPath = $this->extractFolder . I . self::PLIST;
 
-        if($this->parsed){
+        if ($this->parsed) {
             $msg = "";
-            if(!file_exists($this->extractFolder . I . self::APP_ICON)){
+            if (!file_exists($this->extractFolder . I . self::APP_ICON)) {
                 $msg = "Parsed file ipa! But app-icon.png no longer exist";
             }
 
-            if(!file_exists($this->extractFolder . I . self::PLIST)){
+            if (!file_exists($this->extractFolder . I . self::PLIST)) {
                 $msg = "Parsed file ipa! But plist no longer exist";
             }
 
-            if($msg != ""){
+            if ($msg != "") {
                 trigger_error($msg, E_USER_WARNING);
                 $this->parsed = false;
                 //clean extract folder for re-parse
@@ -96,7 +99,7 @@ class IpaParser{
 
         }
 
-        if(!$this->parsed){
+        if (!$this->parsed) {
             //unzip ipa, get out Info.plist, *.png
             $imgPattern = "*.png";
             $zipCommand =
@@ -106,14 +109,14 @@ class IpaParser{
 
             //move *.png to $this->extractFolder
             //bcs move can not move to itself, move to tmp folder, then move back
-            if(!is_dir(self::OUTPUT_TEMP) && !file_exists(self::OUTPUT_TEMP)){
+            if (!is_dir(self::OUTPUT_TEMP) && !file_exists(self::OUTPUT_TEMP)) {
                 mkdir(self::OUTPUT_TEMP, 777, true);
             }
             $dir = scandir($this->extractFolder . I . "Payload");
             $appFolder = $dir[2];
             //make sure that $appFolder NOT contain SPACE
             //believe in preg_match
-            if(preg_match('/\s/', $appFolder) === 1){
+            if (preg_match('/\s/', $appFolder) === 1) {
                 $oldFolder = $appFolder;
                 $appFolder = $this->removeSpace($oldFolder);
                 $renameCommand = sprintf("mv '%s' %s", $this->extractFolder . I . "Payload" . I . $oldFolder,
@@ -133,19 +136,19 @@ class IpaParser{
             $i = 0;
             $pngUncrushed = new PPngUncrush();
 
-            while($failedDecode && $i < $numOfImgFiles){
+            while ($failedDecode && $i < $numOfImgFiles) {
                 $pngUncrushed->setPath($imgFiles[$i]);
                 $failedDecode = !$pngUncrushed->decode($this->extractFolder . I . self::APP_ICON);
             }
 
-            if(!$failedDecode){
+            if (!$failedDecode) {
                 trigger_error("decode success", E_USER_NOTICE);
             }
 
             //set default for $iconPath
-            if($failedDecode){
+            if ($failedDecode) {
                 $copyStatus = copy(__DIR__ . I . "app-icon.png", $this->extractFolder . I . self::APP_ICON);
-                if(!$copyStatus){
+                if (!$copyStatus) {
                     trigger_error("copy default icon failed", E_USER_WARNING);
                 }
             }
@@ -162,7 +165,7 @@ class IpaParser{
      * @return string
      * @throws Exception
      */
-    private function cmd($cmd, $command, $exceptionType){
+    private function cmd($cmd, $command, $exceptionType) {
 //        exec($cmd, $out, $resultCode);
 //        if($resultCode == 1){
 //            //$cmd not installed or not added to environment variable
@@ -181,24 +184,30 @@ class IpaParser{
 //
 //        throw new Exception(self::UN_HANDLE);
         exec($command, $out, $resultCode);
-        if($resultCode != 0){
+        if ($resultCode != 0) {
             $msg = sprintf("Error when execute cmd: %s", $command);
             throw new Exception($msg);
         }
     }
 
-    public function getIcon(){
+    public function getIcon() {
         return $this->icon;
 
     }
 
-    public function getPlist(){
+    public function getPlist() {
         return $this->plist;
     }
 
-    public function getBasicInfo(){
-        $info = $this->plist->toArray();
+    public function getBasicInfo() {
+        $info = [];
+        $plistArray = $this->plist->toArray();
+        $info[self::APP_NAME] = $plistArray["CFBundleDisplayName"];
+        $info[self::BUNDLE_INDENTIFIER] = $plistArray["CFBundleIdentifier"];
+        $info[self::VERSION_NAME] = $plistArray["CFBundleShortVersionString"];
+        $info[self::VERSION_CODE] = $plistArray["CFBundleVersion"];
         $info[self::ICON_PATH] = $this->icon->getPath();
+
         return $info;
     }
 
@@ -206,7 +215,7 @@ class IpaParser{
      * @param $imgPath
      * @param $imgPattern
      */
-    private function moveFiles($imgPath, $imgPattern){
+    private function moveFiles($imgPath, $imgPattern) {
         //MOVE FILE EASILY FAILED when something doesn't match it
         //but it doesn't have HUGE IMPACT on result
         //bypass exception, just exec
@@ -219,12 +228,12 @@ class IpaParser{
 //        $this->cmd("mv", $mvCommand, Exception::class);
     }
 
-    private function removeSpace($name){
+    private function removeSpace($name) {
         return preg_replace('/\s+/', '-', $name);
     }
 
-    protected function checkParse(){
-        if(is_dir($this->extractFolder) && file_exists($this->extractFolder)){
+    protected function checkParse() {
+        if (is_dir($this->extractFolder) && file_exists($this->extractFolder)) {
             $this->parsed = true;
         }
     }
