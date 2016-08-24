@@ -14,6 +14,11 @@ IpaParser try to unzip ipa file, then read __Info.plist__ & uncrush __*.png__ to
     #getBasicInfo() return an array from Info.plist
     #icon saved in ipa-info/app-icon.png
     $info = $parser->getBasicInfo();
+
+##Test
+  
+    /*Run unit test by cmd:
+    phpunit --bootstrap vendor/autoload.php test/ParseTest.php
     
 ##Sample result
 Info.plist
