@@ -101,16 +101,19 @@ class PPngUncrush{
                 // Extract and mutate the data chunk if needed (can be multiple)
                 if($chunk['type'] == 'IDAT' && $isIphoneCompressed){
                     set_error_handler(function($errno, $errstr, $errfile, $errline, array $errcontext){
-                        // error was suppressed with the @-operator
-                        if(0 === error_reporting()){
-                            return false;
-                        }
+                        
+                        return false;
 
-                        throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+                        // error was suppressed with the @-operator
+                        if (0 === error_reporting())
+                            return false;
+                        
+                        //throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
                     });
+
                     try{
                         $uncompressed .= gzinflate($data);
-                    }catch(ErrorException $e){
+                    }catch(Exception $e){
                         var_dump($e->getMessage());
                         restore_error_handler();
                         return false;
